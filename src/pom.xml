@@ -1780,6 +1780,27 @@
       </execution>
     </executions>
   </plugin>
+  <plugin>
+    <groupId>org.codehaus.mojo</groupId>
+    <artifactId>build-helper-maven-plugin</artifactId>
+    <version>3.2.0</version>
+    <executions>
+      <execution>
+        <id>escape-baskslashes</id>
+        <phase>validate</phase>
+        <goals>
+          <goal>regex-property</goal>
+        </goals>
+        <configuration>
+          <value>${project.build.directory}</value>
+          <regex>\\</regex>
+          <replacement>\\\\</replacement>
+          <name>escapedBuildDirectory</name>
+          <failIfNoMatch>false</failIfNoMatch>
+        </configuration>
+      </execution>
+    </executions>
+  </plugin>
 
   </plugins>
 
@@ -2327,7 +2348,7 @@
               <fork>false</fork>
               <compilerArgs>
                 <arg>-XDcompilePolicy=simple</arg>
-                <arg>-Xplugin:ErrorProne -XepExcludedPaths:${project.build.directory}/generated-sources/.* ${errorProneFlags}</arg>
+                <arg>-Xplugin:ErrorProne -XepExcludedPaths:${escapedBuildDirectory}/generated-sources/.* ${errorProneFlags}</arg>
                 <arg>-Xlint:${lint}</arg>
                 <arg>-Werror</arg>
                 <arg>-Xmaxwarns</arg>
@@ -2365,7 +2386,7 @@
               <fork>true</fork>
               <compilerArgs combine.children="append">
                 <arg>-XDcompilePolicy=simple</arg>
-                <arg>-Xplugin:ErrorProne -XepExcludedPaths:${project.build.directory}/generated-sources/.* ${errorProneFlags}</arg>
+                <arg>-Xplugin:ErrorProne -XepExcludedPaths:${escapedBuildDirectory}/generated-sources/.* ${errorProneFlags}</arg>
                 <arg>-J-Xbootclasspath/p:${settings.localRepository}/com/google/errorprone/javac/${javac.version}/javac-${javac.version}.jar</arg>
                 <arg>-Xlint:${lint}</arg>
                 <arg>-Werror</arg>
