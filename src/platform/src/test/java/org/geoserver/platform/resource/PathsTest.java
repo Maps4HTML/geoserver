@@ -145,6 +145,7 @@ public class PathsTest {
         if (WIN) {
             File expected = new File("C:\\file.txt");
             assertTrue(expected.isAbsolute());
+            // in this version, toFile returns an absolute path here
             assertTrue(Paths.toFile(null, "C:/file.txt").isAbsolute());
             assertTrue(!Paths.toFile(null, "foo/bar/file.txt").isAbsolute());
             assertTrue(!Paths.toFile(null, "C:file.txt").isAbsolute());
@@ -154,7 +155,7 @@ public class PathsTest {
         } else {
             File expected = new File("/file.txt");
             assertTrue(expected.isAbsolute());
-            assertTrue(!Paths.toFile(null, "/file.txt").isAbsolute());
+            assertTrue(Paths.toFile(null, "/file.txt").isAbsolute());
             assertTrue(!Paths.toFile(null, "foo/bar/file.txt").isAbsolute());
             assertTrue(Paths.toFile(null, "/foo/bar/file.txt").isAbsolute());
             base = new File("/foo");
