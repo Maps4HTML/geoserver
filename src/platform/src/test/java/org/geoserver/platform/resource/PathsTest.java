@@ -155,6 +155,8 @@ public class PathsTest {
         } else {
             File expected = new File("/file.txt");
             assertTrue(expected.isAbsolute());
+            // fails on linux. Downstream shenanigans in getResource work around it.
+            // probably not ideal to have different behaviour of toFile on linux and windows
             assertTrue(Paths.toFile(null, "/file.txt").isAbsolute());
             assertTrue(!Paths.toFile(null, "foo/bar/file.txt").isAbsolute());
             assertTrue(Paths.toFile(null, "/foo/bar/file.txt").isAbsolute());
