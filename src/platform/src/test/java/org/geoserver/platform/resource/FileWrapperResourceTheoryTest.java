@@ -29,13 +29,32 @@ public class FileWrapperResourceTheoryTest extends ResourceTheoryTest {
     protected Resource getResource(String path) throws Exception {
         File file = Paths.toFile(null, path);
         if (!file.isAbsolute()) {
-            // in linux, an absolute path might appear relative if the root slash has been removed.
+            // in linux or windows, an absolute path might appear relative if the root slash (on
+            // linux) or the first slash (on windows, an error) has been removed.
             // This can also occur with the root path if java.io.tmpdir is relative.
+            
+            // this is not pretty but it makes the tests run, hopefully on linux
+            // and windows
             String rootPath = folder.getRoot().getPath();
-            String rootPathWithoutSlash =
-                    rootPath.startsWith("/") ? rootPath.substring(1) : rootPath;
-            if (path.contains(rootPathWithoutSlash)) {
-                file = Paths.toFile(new File("/"), path);
+            String rootPathWithoutRoot =
+                    rootPath.startsWith("/") || rootPath.matches(".:\\\\.*")
+                            ? rootPath.substring(rootPath.indexOf(File.separatorChar) + 1)
+                            : rootPath;
+            File fpath = new File(path);
+            if (fpath.getPath().contains(rootPathWithoutRoot)) {
+                file =
+                        Paths.toFile(
+                                new File(
+                                        rootPath.substring(
+                                                0,
+                                                rootPath.lastIndexOf(fpath.getPath())
+                                                        + rootPath.length()+ 1)),
+                                fpath.getPath()
+                                        .substring(
+                                                fpath.getPath().lastIndexOf(rootPathWithoutRoot)
+                                                        + rootPathWithoutRoot.length()
+                                                        + 1,
+                                                fpath.getPath().length()));
             } else {
                 file = Paths.toFile(folder.getRoot(), path);
             }
