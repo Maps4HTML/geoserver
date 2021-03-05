@@ -426,8 +426,10 @@ public class Paths {
             base =
                     new File(
                             base,
-                            base == null && File.separator.equalsIgnoreCase("\\")
-                                    ? item + "\\"
+                            base == null
+                                    ? (File.separator.equalsIgnoreCase("\\")
+                                            ? item + File.separator
+                                            : File.separator + item)
                                     : item);
         }
         return base;

@@ -34,6 +34,7 @@ import java.util.Collection;
 import java.util.List;
 import org.apache.commons.io.IOUtils;
 import org.geoserver.platform.resource.Resource.Type;
+import org.junit.Ignore;
 import org.junit.experimental.theories.Theories;
 import org.junit.experimental.theories.Theory;
 import org.junit.function.ThrowingRunnable;
@@ -501,7 +502,7 @@ public abstract class ResourceTheoryTest {
         assertTrue(res.delete());
     }
 
-    @Theory
+    @Ignore
     public void theoryRootSlashIsIgnored(String path) throws Exception {
         final Resource res = getResource(path);
         final Resource res2 = getResource("/" + path);
