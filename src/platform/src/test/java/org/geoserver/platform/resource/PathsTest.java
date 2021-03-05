@@ -157,6 +157,7 @@ public class PathsTest {
             File expected = new File("/file.txt");
             assertTrue(expected.isAbsolute());
             assertTrue(Paths.toFile(null, "/file.txt").isAbsolute());
+            // this fails on linux. boo.
             assertTrue(!Paths.toFile(null, "foo/bar/file.txt").isAbsolute());
             assertTrue(Paths.toFile(null, "/foo/bar/file.txt").isAbsolute());
             base = new File("/foo");
