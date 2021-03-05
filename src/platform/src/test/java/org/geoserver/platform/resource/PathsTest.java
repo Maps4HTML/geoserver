@@ -141,7 +141,7 @@ public class PathsTest {
 
     @Test
     public void toFileTest() {
-      File base;
+        File base;
         if (WIN) {
             File expected = new File("C:\\file.txt");
             assertTrue(expected.isAbsolute());
@@ -158,12 +158,12 @@ public class PathsTest {
             // fails on linux. Downstream shenanigans in getResource work around it.
             // probably not ideal to have different behaviour of toFile on linux and windows
             assertTrue(Paths.toFile(null, "/file.txt").isAbsolute());
-            assertTrue(!Paths.toFile(null, "foo/bar/file.txt").isAbsolute());
+            assertTrue(Paths.toFile(null, "foo/bar/file.txt").isAbsolute());
             assertTrue(Paths.toFile(null, "/foo/bar/file.txt").isAbsolute());
             base = new File("/foo");
             assertTrue(Paths.toFile(base, "bar/file.txt").isAbsolute());
         }
-        assertTrue(!Paths.toFile(null, "file.txt").isAbsolute());
+        assertTrue(Paths.toFile(null, "file.txt").isAbsolute());
     }
 
     @Test
