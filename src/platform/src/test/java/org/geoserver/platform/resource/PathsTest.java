@@ -11,6 +11,7 @@ import static org.geoserver.platform.resource.Paths.parent;
 import static org.geoserver.platform.resource.Paths.path;
 import static org.geoserver.platform.resource.Paths.sidecar;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -152,6 +153,9 @@ public class PathsTest {
             assertTrue(!Paths.toFile(null, "/foo/bar/file.txt").isAbsolute());
             base = new File("c:\\foo");
             assertTrue(Paths.toFile(base, "bar/file.txt").isAbsolute());
+            // on windows, having this be true is NOT possible,
+            // because you can't guess what drive you're on
+            assertFalse(Paths.toFile(null, "file.txt").isAbsolute());
         } else {
             File expected = new File("/file.txt");
             assertTrue(expected.isAbsolute());
@@ -162,8 +166,9 @@ public class PathsTest {
             assertTrue(Paths.toFile(null, "/foo/bar/file.txt").isAbsolute());
             base = new File("/foo");
             assertTrue(Paths.toFile(base, "bar/file.txt").isAbsolute());
+            // on linux this is possible
+            assertTrue(Paths.toFile(null, "file.txt").isAbsolute());
         }
-        assertTrue(Paths.toFile(null, "file.txt").isAbsolute());
     }
 
     @Test
