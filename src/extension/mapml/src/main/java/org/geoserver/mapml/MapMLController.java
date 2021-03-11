@@ -283,6 +283,12 @@ public class MapMLController {
                 .append("/")
                 .append(!styleName.isEmpty() ? "?style=" + styleName : "")
                 .append("\" checked></layer->\n")
+                .append("<layer- label=\"")
+                .append(layerName)
+                .append(" vectors\" ")
+                .append("src=\"")
+                .append(getGetFeatureURL(base, projType, layerInfo))
+                .append("\"></layer->\n")
                 .append("</mapml-viewer>\n")
                 .append("</body>\n")
                 .append("</html>");
@@ -1029,6 +1035,23 @@ public class MapMLController {
         body.setExtent(extent);
         mapml.setBody(body);
         return mapml;
+    }
+
+    private String getGetFeatureURL(String baseUrl, ProjType projType, LayerInfo layerInfo) {
+
+        // create MapML extent that uses WFS service
+        String path = "ows";
+
+        HashMap<String, String> params = new HashMap<>();
+        params.put("version", "1.0.0");
+        params.put("service", "WFS");
+        params.put("request", "GetFeature");
+        params.put("srsName", previewTcrsMap.get(projType.value()).getCode());
+        params.put("typeName", layerInfo.getName());
+        params.put("outputFormat", "MAPML");
+
+        String url = ResponseUtils.buildURL(baseUrl, path, params, URLMangler.URLType.SERVICE);
+        return url;
     }
 
     /**
