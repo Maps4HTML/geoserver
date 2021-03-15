@@ -23,7 +23,7 @@ import org.geoserver.catalog.ResourceInfo;
 import org.geoserver.config.GeoServerInfo;
 import org.geoserver.data.test.SystemTestData;
 import org.geoserver.wms.WMSDimensionsTestSupport;
-import org.geoserver.wms.WMSInfo;
+import static org.junit.Assert.assertFalse;
 import org.junit.Before;
 import org.junit.Test;
 import org.springframework.mock.web.MockHttpServletRequest;
@@ -47,16 +47,21 @@ public class MapMLDimensionsTest extends WMSDimensionsTestSupport {
         super.onSetUp(testData);
 
         GeoServerInfo global = getGeoServer().getGlobal();
+        // this is necessary because the super.onSetUp sets it to something that
+        // is not a URL, or at least it's a relative path which fails for
+        // the mapml output tests.
         global.getSettings().setProxyBaseUrl("");
         getGeoServer().save(global);
-
-        WMSInfo wms = getGeoServer().getService(WMSInfo.class);
-        wms.getSRS().add("EPSG:3857");
-        getGeoServer().save(wms);
     }
 
     @Test
     public void testElevationList() throws Exception {
+        Catalog catalog = getCatalog();
+        ResourceInfo layerMeta = catalog.getLayerByName(getLayerId(V_TIME_ELEVATION)).getResource();
+        assertTrue(layerMeta instanceof FeatureTypeInfo);
+        FeatureTypeInfo typeInfo = (FeatureTypeInfo) layerMeta;
+        // layer has no dimension yet
+        assertTrue(typeInfo.getMetadata().get(ResourceInfo.ELEVATION, DimensionInfo.class) == null);
         setupVectorDimension(
                 ResourceInfo.ELEVATION,
                 "elevation",
@@ -64,24 +69,38 @@ public class MapMLDimensionsTest extends WMSDimensionsTestSupport {
                 null,
                 UNITS,
                 UNIT_SYMBOL);
+        
+        // re-query the catalog for the updated info
+        typeInfo = (FeatureTypeInfo)catalog.getLayerByName(getLayerId(V_TIME_ELEVATION)).getResource();
+        // get the diminsion info fromt the metadata map
+        DimensionInfo elevationInfo =
+                typeInfo.getMetadata().get(ResourceInfo.ELEVATION, DimensionInfo.class);
+        // prove it's enabled, but not yet known to mapml
+        assertTrue(elevationInfo.isEnabled());
 
-        Catalog catalog = getCatalog();
-        ResourceInfo layerMeta = catalog.getLayerByName(getLayerId(V_TIME_ELEVATION)).getResource();
+        // get the mapml doc for the layer
+        String path = "mapml/" + getLayerId(V_TIME_ELEVATION) + "/osmtile/";
+        org.w3c.dom.Document doc = getMapML(path);
+        //assure us it's actually working as a document
+        assertXpathEvaluatesTo("1", "count(//html:link[@rel='image'][@tref])", doc);
+        URL url = new URL(xpath.evaluate("//html:link[@rel='image']/@tref", doc));
+        // assert that there's no elevation variable nor URL template variable
+        HashMap<String, String> vars = parseQuery(url);
+        assertTrue(vars.get("elevation") == null);
+        assertXpathEvaluatesTo(
+                "0", "count(//html:select[@name='elevation'])", doc);
+        // update the layer metadata to indicate the dimension is known to mapml
+        // doesn't test the web interface, but the does test the mechanism
+        // the web interface uses to signal dimenion for mapml
+        layerMeta = catalog.getLayerByName(getLayerId(V_TIME_ELEVATION)).getResource();
         MetadataMap mm = layerMeta.getMetadata();
         mm.put("mapml.dimension", "elevation");
         catalog.save(layerMeta);
-        assertTrue(layerMeta instanceof FeatureTypeInfo);
-        FeatureTypeInfo typeInfo = (FeatureTypeInfo) layerMeta;
-        DimensionInfo elevationInfo =
-                typeInfo.getMetadata().get(ResourceInfo.ELEVATION, DimensionInfo.class);
-        assertTrue(elevationInfo.isEnabled());
 
-        String path = "mapml/" + getLayerId(V_TIME_ELEVATION) + "/osmtile/";
-        org.w3c.dom.Document doc = getMapML(path);
-
+        doc = getMapML(path);
         assertXpathEvaluatesTo("1", "count(//html:link[@rel='image'][@tref])", doc);
-        URL url = new URL(xpath.evaluate("//html:link[@rel='image']/@tref", doc));
-        HashMap<String, String> vars = parseQuery(url);
+        url = new URL(xpath.evaluate("//html:link[@rel='image']/@tref", doc));
+        vars = parseQuery(url);
         assertTrue(vars.get("elevation").equalsIgnoreCase("{elevation}"));
 
         assertXpathEvaluatesTo("1", "count(//html:link[@rel='query'][@tref])", doc);
