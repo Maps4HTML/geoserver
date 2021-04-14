@@ -46,9 +46,10 @@ public abstract class FreeMarkerTemplateManager {
     /** Config key determining the restrictions for accessing static members */
     static final String KEY_STATIC_MEMBER_ACCESS = "org.geoserver.htmlTemplates.staticMemberAccess";
 
-    enum OutputFormat {
+    public enum OutputFormat {
         JSON("application/json"),
-        HTML("text/html");
+        HTML("text/html"),
+        MAPML("text/mapml");
 
         OutputFormat(String format) {
             this.format = format;
