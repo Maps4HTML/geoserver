@@ -159,7 +159,7 @@ public class MapMLGetFeatureOutputFormatTest extends WFSTestSupport {
                 assertXpathEvaluatesTo(
                         "1", "count(//html:meta[@name='cs'][@content='" + cs + "'])", doc);
                 assertXpathEvaluatesTo("1", "count(//html:meta[@name='projection'])", doc);
-                TiledCRSParams tcrs = lookupTCRS(code);
+                TiledCRSParams tcrs = TiledCRSConstants.lookupTCRS(code);
                 CoordinateReferenceSystem crs = CRS.decode(code);
                 String cite = (crs instanceof GeodeticCRS) ? "MapML:" : "";
                 String proj = tcrs == null ? cite + code : tcrs.getName();
@@ -190,14 +190,6 @@ public class MapMLGetFeatureOutputFormatTest extends WFSTestSupport {
             }
         } catch (Exception e) {
         }
-    }
-    /**
-     * @param crsCode - an official CRS code / srsName to look up
-     * @return the TCRS corresponding to the crsCode, long or short, or null if not found
-     */
-    private TiledCRSParams lookupTCRS(String crsCode) {
-        return TiledCRSConstants.tiledCRSDefinitions.getOrDefault(
-                crsCode, TiledCRSConstants.tiledCRSBySrsName.get(crsCode));
     }
 
     @Test

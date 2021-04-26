@@ -40,12 +40,12 @@ public class MapMLGeneratorTest extends GeoServerTestSupport {
             new Point(new CoordinateArraySequence(ca1), jtsf),
             new Point(new CoordinateArraySequence(ca2), jtsf)
         };
-
+        MapMLGenerator featureBuilder = new MapMLGenerator();
         org.locationtech.jts.geom.MultiPoint jtsMultiPoint =
                 new org.locationtech.jts.geom.MultiPoint(points, jtsf);
         JAXBElement<org.geoserver.mapml.xml.MultiPoint> mp = null;
         try {
-            GeometryContent g = MapMLGenerator.buildGeometry(jtsMultiPoint);
+            GeometryContent g = featureBuilder.buildGeometry(jtsMultiPoint);
 
             mp = (JAXBElement<org.geoserver.mapml.xml.MultiPoint>) g.getGeometryContent();
         } catch (Exception e) {
