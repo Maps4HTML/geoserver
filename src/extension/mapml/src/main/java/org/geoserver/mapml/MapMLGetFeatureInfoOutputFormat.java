@@ -11,6 +11,7 @@ import java.io.OutputStreamWriter;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -23,7 +24,6 @@ import org.geoserver.catalog.ResourceInfo;
 import org.geoserver.config.GeoServer;
 import org.geoserver.config.SettingsInfo;
 import org.geoserver.mapml.tcrs.TiledCRSConstants;
-import org.geoserver.mapml.tcrs.TiledCRSParams;
 import org.geoserver.mapml.xml.Base;
 import org.geoserver.mapml.xml.BodyContent;
 import org.geoserver.mapml.xml.Feature;
@@ -78,16 +78,12 @@ public class MapMLGetFeatureInfoOutputFormat extends GetFeatureInfoOutputFormat 
             throws ServiceException, IOException {
 
         String baseUrl = request.getBaseUrl();
-        // the MapMLController serialized the CRS parameter, so we can rely
-        // on it being a string match for TiledCRSParamms.code field.
-        String crs = request.getRawKvp().get("CRS");
-        String projection = null;
-        for (TiledCRSParams tcrs : TiledCRSConstants.tiledCRSDefinitions.values()) {
-            if (tcrs.getCode().equalsIgnoreCase(crs)) {
-                projection = tcrs.getName();
-                break;
-            }
-        }
+        Map<String, String> kvp = request.getRawKvp();
+        String projection =
+                TiledCRSConstants.lookupTCRSName(
+                        kvp.getOrDefault(
+                                "CRS",
+                                kvp.getOrDefault("SRS", kvp.getOrDefault("TILEMATRIXSET", ""))));
 
         // build the mapML doc
         Mapml mapml = new Mapml();

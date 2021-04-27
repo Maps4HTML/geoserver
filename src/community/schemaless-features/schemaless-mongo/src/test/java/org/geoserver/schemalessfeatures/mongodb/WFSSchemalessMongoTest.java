@@ -1,6 +1,7 @@
 package org.geoserver.schemalessfeatures.mongodb;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
@@ -111,6 +112,54 @@ public class WFSSchemalessMongoTest extends AbstractMongoDBOnlineTestSupport {
                         "Schemaless support for GetFeature is not available for text/xml"));
     }
 
+    @Test
+    public void testGetStationFeaturesWithFilterNull() throws Exception {
+        JSON json =
+                getAsJSON(
+                        "wfs?request=GetFeature&version=1.1.0&typename=gs:"
+                                + StationsTestSetup.COLLECTION_NAME
+                                + "&outputFormat=application/json&cql_filter=nullableField IS NULL");
+        JSONObject jsonObject = (JSONObject) json;
+        JSONArray features = jsonObject.getJSONArray("features");
+        assertEquals(3, features.size());
+    }
+
+    @Test
+    public void testGetStationFeaturesWithFilterNull2() throws Exception {
+        JSON json =
+                getAsJSON(
+                        "wfs?request=GetFeature&version=1.1.0&typename=gs:"
+                                + StationsTestSetup.COLLECTION_NAME
+                                + "&outputFormat=application/json&cql_filter=anotherNullableField IS NULL");
+        JSONObject jsonObject = (JSONObject) json;
+        JSONArray features = jsonObject.getJSONArray("features");
+        assertEquals(10, features.size());
+    }
+
+    @Test
+    public void testGetStationFeaturesWithFilterNotNull() throws Exception {
+        JSON json =
+                getAsJSON(
+                        "wfs?request=GetFeature&version=1.1.0&typename=gs:"
+                                + StationsTestSetup.COLLECTION_NAME
+                                + "&outputFormat=application/json&cql_filter=anotherNullableField IS NOT NULL");
+        JSONObject jsonObject = (JSONObject) json;
+        JSONArray features = jsonObject.getJSONArray("features");
+        assertEquals(2, features.size());
+    }
+
+    @Test
+    public void testGetStationFeaturesWithFilterNotNull2() throws Exception {
+        JSON json =
+                getAsJSON(
+                        "wfs?request=GetFeature&version=1.1.0&typename=gs:"
+                                + StationsTestSetup.COLLECTION_NAME
+                                + "&outputFormat=application/json&cql_filter=anotherNullableField.value IS NOT NULL");
+        JSONObject jsonObject = (JSONObject) json;
+        JSONArray features = jsonObject.getJSONArray("features");
+        assertEquals(1, features.size());
+    }
+
     static void checkStationFeature(JSONObject station) {
         JSONObject properties = station.getJSONObject("properties");
         JSONObject geometry = station.getJSONObject("geometry");
@@ -122,10 +171,22 @@ public class WFSSchemalessMongoTest extends AbstractMongoDBOnlineTestSupport {
         assertNotNull(properties.get("numericValue"));
         JSONObject contact = properties.getJSONObject("contact");
         assertNotNull(contact);
-        assertEquals(4, contact.size());
+        assertSkippedGeoJSONProperties(contact);
+        assertEquals(1, contact.size());
         JSONArray measurements = properties.getJSONArray("measurements");
         assertNotNull(measurements);
         assertTrue(measurements.size() > 0);
+        for (int i = 0; i < measurements.size(); i++) {
+            JSONObject measurement = measurements.getJSONObject(i);
+            assertSkippedGeoJSONProperties(measurement);
+        }
+    }
+
+    private static void assertSkippedGeoJSONProperties(JSONObject object) {
+        assertFalse(object.has("properties"));
+        assertFalse(object.has("geometry"));
+        assertFalse(object.has("id"));
+        assertFalse(object.has("type"));
     }
 
     private String readResourceContent(String resourcePath) {

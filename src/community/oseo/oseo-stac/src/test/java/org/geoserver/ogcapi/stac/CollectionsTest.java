@@ -11,8 +11,10 @@ import com.jayway.jsonpath.DocumentContext;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
+import org.geoserver.config.GeoServerDataDirectory;
 import org.geoserver.ogcapi.Queryables;
 import org.geoserver.opensearch.eo.store.OpenSearchAccess;
+import org.geoserver.platform.resource.Resource;
 import org.geotools.data.Query;
 import org.hamcrest.CoreMatchers;
 import org.hamcrest.Matchers;
@@ -21,6 +23,14 @@ import org.jsoup.select.Elements;
 import org.junit.Test;
 
 public class CollectionsTest extends STACTestSupport {
+
+    @Test
+    public void testTemplatesCopy() throws Exception {
+        GeoServerDataDirectory dd = getDataDirectory();
+        Resource templates = dd.get("templates/ogc/stac");
+        assertEquals(Resource.Type.RESOURCE, templates.get("collections.json").getType());
+        assertEquals(Resource.Type.RESOURCE, templates.get("items.json").getType());
+    }
 
     @Test
     public void testCollectionsHTML() throws Exception {
@@ -108,7 +118,7 @@ public class CollectionsTest extends STACTestSupport {
                 CoreMatchers.containsString(
                         "The SENTINEL-2 mission is a land monitoring constellation of two "
                                 + "satellites"));
-        assertEquals("1.0.0-beta.2", s2.read("stac_version"));
+        assertEquals(STACService.STAC_VERSION, s2.read("stac_version"));
         assertEquals("CC-BY-NC-ND-3.0-IGO", s2.read("license"));
         // Sentinel 2 bounding box
         DocumentContext s2bbox = readContext(s2, "extent.spatial.bbox");

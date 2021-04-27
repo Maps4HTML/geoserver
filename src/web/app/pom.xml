@@ -1795,7 +1795,7 @@
         </dependency>
       </dependencies>
     </profile>
-   <profile>
+    <profile>
       <id>web-service-auth</id>
       <dependencies>
         <dependency>
@@ -1805,5 +1805,15 @@
         </dependency>
       </dependencies>
     </profile>
-</profiles>
+    <profile>
+      <id>gwc-mbtiles</id>
+      <dependencies>
+        <dependency>
+          <groupId>org.geoserver.community</groupId>
+          <artifactId>gs-gwc-mbtiles</artifactId>
+          <version>${project.version}</version>
+        </dependency>
+      </dependencies>
+    </profile>
+  </profiles>
 </project>

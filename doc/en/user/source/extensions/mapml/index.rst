@@ -141,6 +141,7 @@ You can add layers to the map as you like, by dragging the link URL from the Lay
 MapML visualization is supported by the Web-Map-Custom-Element project. The MapML viewer is built into the GeoServer layer and layer group preview facility.  You can find out more about the Web-Map-Custom-Element at the project `web site <https://maps4html.org/web-map-doc/>`. Here is a simple, self-contained example of an HTML page that uses the <mapml-viewer> and <layer-> elements: 
 
 .. code-block:: html
+
     <!DOCTYPE html>
     <html lang="en">
       <head>
