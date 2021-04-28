@@ -20,24 +20,21 @@ import org.geoserver.wms.featureinfo.GetFeatureInfoOutputFormat;
 import org.geotools.feature.FeatureCollection;
 import org.geotools.util.logging.Logging;
 
-/**
- *
- * @author prushforth
- */
-public class MapMLFeatureInfoOutputFormat extends GetFeatureInfoOutputFormat {
+/** @author prushforth */
+public class MapMLFeatureInfoResponse extends GetFeatureInfoOutputFormat {
     private static final Logger LOGGER = Logging.getLogger("org.geoserver.mapml");
     private static final String FORMAT = MapMLConstants.MAPML_MIME_TYPE;
     private FreeMarkerTemplateManager templateManager;
     private WMS wms;
 
-    public MapMLFeatureInfoOutputFormat(final WMS wms, GeoServerResourceLoader resourceLoader) {
+    public MapMLFeatureInfoResponse(final WMS wms, GeoServerResourceLoader resourceLoader) {
         super(FORMAT);
         this.wms = wms;
         this.templateManager =
                 new MapMLTemplateManager(
                         FreeMarkerTemplateManager.OutputFormat.MAPML, wms, resourceLoader);
     }
-    
+
     /**
      * Writes the document
      *
@@ -48,53 +45,32 @@ public class MapMLFeatureInfoOutputFormat extends GetFeatureInfoOutputFormat {
     @SuppressWarnings("unchecked")
     @Override
     public void write(
-            FeatureCollectionType results, GetFeatureInfoRequest request, OutputStream out)
-            throws ServiceException, IOException {
-        templateManager.write(results, request, out);
+            FeatureCollectionType features, GetFeatureInfoRequest fInfoReq, OutputStream out)
+            throws IOException {
+        boolean usedTemplates = false;
+
+        if (templateManager != null)
+            // check before if there are free marker templates to customize response
+            usedTemplates = templateManager.write(features, fInfoReq, out);
+
+        if (!usedTemplates) {
+            MapMLGetFeatureOutputFormat format =
+                    new MapMLGetFeatureOutputFormat(wms.getGeoServer());
+            
+            // this is going to require some thinking about how to re-implement
+            // the write method so that it can work with a null Operation
+            format.write(features, out, null);
+        }
     }
-    
+
     @Override
     public String getCharset() {
         // MapML is always encoded as UTF-8; SettingsInfo.getCharset() notwithstanding
         return "UTF-8";
     }
-  
+
     public FreeMarkerTemplateManager getTemplateManager() {
         return templateManager;
     }
 
-    /** */
-    private final class MapMLTemplateManager extends FreeMarkerTemplateManager {
-
-        public MapMLTemplateManager(
-                FreeMarkerTemplateManager.OutputFormat format, WMS wms, GeoServerResourceLoader resourceLoader) {
-            super(format, wms, resourceLoader);
-        }
-
-        @Override
-        protected boolean templatesExist(
-                Template header, Template footer, List<FeatureCollection> collections)
-                throws IOException {
-            return true;
-        }
-
-        @Override
-        protected void handleContent(
-                List<FeatureCollection> collections,
-                OutputStreamWriter osw,
-                GetFeatureInfoRequest request)
-                throws IOException {
-            for (int i = 0; i < collections.size(); i++) {
-                FeatureCollection fc = collections.get(i);
-                Template content = getContentTemplate(fc, wms.getCharSet());
-                String typeName = request.getQueryLayers().get(i).getName();
-                processTemplate(typeName, fc, content, osw);
-            }
-        }
-
-        @Override
-        protected String getTemplateFileName(String filename) {
-            return filename + ".ftl";
-        }
-    }
 }
