@@ -273,24 +273,34 @@
   max-height: 100%;
   max-width: 100%;
   border-radius: 4px;
-  padding: 10px;
+  padding: 5px 10px;
   background-color: #fff;
   cursor: default;
+  z-index: 1000;
+  position: absolute;
+  display: block;
+  top: auto;
+  right: 5px;
+  bottom: 5px;
+  left: 5px;
+  width: -webkit-fit-content;
+  width: -moz-fit-content;
+  width: fit-content;
+  font: inherit;
 }
 
 .mapml-debug-banner {
-  margin-left: 4px;
   font-weight: bold;
   text-transform: uppercase;
+  display: inline-block;
+  text-align: left;
+  text-align: inline-start;
+  line-height: 2;
 }
 
 .mapml-debug-panel,
 .mapml-debug-grid {
   font-family: monospace;
-}
-
-.mapml-debug-panel {
-  margin-top: 4px;
 }
 
 .mapml-debug-tile {
@@ -301,6 +311,20 @@
 .mapml-debug-coordinates {
   padding-left: 4px;
   padding-right: 4px;
+}
+
+.mapml-debug,
+.mapml-debug * {
+  border-collapse: collapse;
+  border-spacing: 0;
+}
+
+.mapml-debug-coordinates:empty {
+  display: none;
+}
+
+.mapml-debug-coordinates > * {
+  display: inline;
 }
 
 /*
@@ -321,6 +345,8 @@
 }
 
 /* Disable dragging of controls. */
+.mapml-popup-button,
+.leaflet-popup-close-button,
 .leaflet-control :not([draggable="true"]),
 .mapml-contextmenu :not([draggable="true"]) {
   -webkit-user-drag: none;
@@ -329,7 +355,8 @@
 /* Disable text selection in controls. */
 .leaflet-control,
 .mapml-contextmenu,
-.mapml-debug {
+.mapml-debug,
+.mapml-focus-buttons {
   -webkit-user-select: none;
   -moz-user-select: none;
   -ms-user-select: none;
@@ -451,7 +478,9 @@ summary {
   outline-offset: -1px;
   z-index: 1000;
   pointer-events: none;
-  position: relative;
+  position: absolute;
+  height: 100%;
+  width: 100%;
 }
 
 /* Quick fix for https://github.com/Maps4HTML/Web-Map-Custom-Element/issues/358,
@@ -484,4 +513,23 @@ summary {
 svg.leaflet-image-layer.leaflet-interactive g {
   pointer-events: visiblePainted; /* IE 9-10 doesn't have auto */
   pointer-events: auto;
+}
+
+:fullscreen .mapml-debug-grid {
+  color: #fff;
+  text-shadow: 1px 1px 1px #000, 1px 1px 1px #000;
+}
+
+.mapml-link-preview {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  background-color: rgb(222,225,230);
+  border-radius: 0 5px 0 0 ;
+  z-index: 1050;
+}
+
+.mapml-link-preview > p {
+  margin: 3px 5px 2px 3px;
+  color: rgb(60,64,67);
 }
