@@ -658,7 +658,7 @@
         this._initContainer();
         // call the parent constructor with the template tref value, per the 
         // Leaflet tutorial: http://leafletjs.com/examples/extending/extending-1-classes.html#methods-of-the-parent-class
-        L.TileLayer.prototype.initialize.call(this, template.template, L.extend(options, {pane: this._container}));
+        L.TileLayer.prototype.initialize.call(this, template.template, L.extend(options, {pane: this._container, noWrap: true}));
       },
       onAdd : function(){
         this._map._addZoomLimit(this);
