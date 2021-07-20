@@ -41,7 +41,7 @@ public class MapMLGetFeatureOutputFormatTest extends WFSTestSupport {
     @Override
     protected void setUpInternal(SystemTestData data) throws Exception {
         HashMap<String, String> m = new HashMap<>();
-        m.put("html", "http://www.w3.org/1999/xhtml/");
+        m.put("html", "http://www.w3.org/1999/xhtml");
 
         NamespaceContext ctx = new SimpleNamespaceContext(m);
         XMLUnit.setXpathNamespaceContext(ctx);

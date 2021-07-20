@@ -295,17 +295,23 @@
           // info: https://github.com/Leaflet/Leaflet/pull/4597
           L.DomUtil.addClass(this._container, 'leaflet-pane mapml-vector-container');
           L.setOptions(this.options.renderer, {pane: this._container});
-          let anim = L.DomUtil.create("style", "mapml-feature-animation", this._container);
-          anim.innerHTML = `@keyframes pathSelect {
-          0% {stroke: white;}
-          50% {stroke: black;}
-        }
-        g:focus > path,
-        path:focus {
-          animation-name: pathSelect;
-          animation-duration: 1s;
-          stroke-width: 5;
-          stroke: black;
+          let style = L.DomUtil.create("style", "mapml-feature-style", this._container);
+          style.innerHTML = `
+        g[role="link"]:focus,
+        g[role="link"]:hover,
+        g[role="button"]:focus,
+        g[role="button"]:hover,
+        g[role="link"] path:focus,
+        g[role="link"] path:hover,
+        g[role="button"] path:focus,
+        g[role="button"] path:hover,
+        g[role="link"]:focus path,
+        g[role="link"]:hover path,
+        g[role="button"]:focus path,
+        g[role="button"]:hover path {
+          outline: 0!important;
+          stroke: #0000EE;
+          stroke: LinkText;
         }`;
         }
 
@@ -592,7 +598,7 @@
       _removeCSS: function(){
         let toDelete = this._container.querySelectorAll("link[rel=stylesheet],style");
         for(let i = 0; i < toDelete.length;i++){
-          if(toDelete[i].classList.contains("mapml-feature-animation")) continue;
+          if(toDelete[i].classList.contains("mapml-feature-style")) continue;
           this._container.removeChild(toDelete[i]);
         }
       },
@@ -658,7 +664,7 @@
         this._initContainer();
         // call the parent constructor with the template tref value, per the 
         // Leaflet tutorial: http://leafletjs.com/examples/extending/extending-1-classes.html#methods-of-the-parent-class
-        L.TileLayer.prototype.initialize.call(this, template.template, L.extend(options, {pane: this._container, noWrap: true}));
+          L.TileLayer.prototype.initialize.call(this, template.template, L.extend(options, {pane: this._container, noWrap: true}));
       },
       onAdd : function(){
         this._map._addZoomLimit(this);
@@ -911,11 +917,11 @@
                   min: crs.crs.tilematrix.horizontal.min,
                   max: crs.crs.tilematrix.horizontal.max(crs.resolutions.length-1)
                 };
-                if (!isNaN(Number.parseInt(min,10))) {
-                  col.min = Number.parseInt(min,10);
+                if (!isNaN(Number.parseFloat(min))) {
+                  col.min = Number.parseFloat(min);
                 }
-                if (!isNaN(Number.parseInt(max,10))) {
-                  col.max = Number.parseInt(max,10);
+                if (!isNaN(Number.parseFloat(max))) {
+                  col.max = Number.parseFloat(max);
                 }
                 break;
               case("row"):
@@ -924,11 +930,11 @@
                   min: crs.crs.tilematrix.vertical.min,
                   max:  crs.crs.tilematrix.vertical.max(crs.resolutions.length-1)
                 };
-                if (!isNaN(Number.parseInt(min,10))) {
-                  row.min = Number.parseInt(min,10);
+                if (!isNaN(Number.parseFloat(min))) {
+                  row.min = Number.parseFloat(min);
                 }
-                if (!isNaN(Number.parseInt(max,10))) {
-                  row.max = Number.parseInt(max,10);
+                if (!isNaN(Number.parseFloat(max))) {
+                  row.max = Number.parseFloat(max);
                 }
                 break;
               case('longitude'):
@@ -977,7 +983,7 @@
                 break;
                 // unsuportted axis value
             }
-          } else if (type.toLowerCase() === "zoom") {
+          } else if (type && type.toLowerCase() === "zoom") {
             //<input name="..." type="zoom" value="0" min="0" max="17">
              zoom = {
                name: name,
@@ -1024,9 +1030,6 @@
         var transformation = this.options.crs.transformation,
             tileSize = this.options.crs.options.crs.tile.bounds.max.x,
             scale = L.bind(this.options.crs.scale, this.options.crs),
-        tilematrix2pcrs = function (c,zoom) {
-          return transformation.untransform(c.multiplyBy(tileSize),scale(zoom));
-        },
         pcrs2tilematrix = function(c,zoom) {
           return transformation.transform(c, scale(zoom)).divideBy(tileSize).floor();
         };
@@ -1049,10 +1052,10 @@
               template.pcrs.northing = '';
             }
             
-            template.pcrs.bounds = L.bounds(
-              tilematrix2pcrs(L.point([col.min,row.min]),zoom.value),
-              tilematrix2pcrs(L.point([col.max,row.max]),zoom.value)
-            );
+            template.pcrs.bounds =  M.boundsToPCRSBounds(
+                        L.bounds(L.point([col.min,row.min]),
+                        L.point([col.max,row.max])),
+                        zoom.value, this.options.crs, M.axisToCS("column"));
             
             template.tilematrix = {};
             template.tilematrix.col = col;
@@ -1375,7 +1378,6 @@
             // it will append its own container for rendering into
             pane: container,
             opacity: opacity,
-            imagePath: this.options.imagePath,
             projection:map.options.projection,
             static: true,
             onEachFeature: function(properties, geometry) {
@@ -1947,7 +1949,6 @@
                 // it will append its own container for rendering into
                 pane: this._container,
                 opacity: this.options.opacity,
-                imagePath: M.detectImagePath(this._map.getContainer()),
                 projection:map.options.projection,
                 // each owned child layer gets a reference to the root layer
                 _leafletLayer: this,
@@ -1958,7 +1959,7 @@
                     var c = document.createElement('div');
                     c.classList.add("mapml-popup-content");
                     c.insertAdjacentHTML('afterbegin', properties.innerHTML);
-                    geometry.bindPopup(c, {autoClose: false, minWidth: 108});
+                    geometry.bindPopup(c, {autoClose: false, minWidth: 165});
                   }
                 }
               });
@@ -1979,7 +1980,6 @@
                     // it will append its own container for rendering into
                     pane: this._container,
                     opacity: this.options.opacity,
-                    imagePath: M.detectImagePath(this._map.getContainer()),
                     projection:map.options.projection,
                     // each owned child layer gets a reference to the root layer
                     _leafletLayer: this,
@@ -1990,7 +1990,7 @@
                         var c = document.createElement('div');
                         c.classList.add("mapml-popup-content");
                         c.insertAdjacentHTML('afterbegin', properties.innerHTML);
-                        geometry.bindPopup(c, {autoClose: false, minWidth: 108});
+                        geometry.bindPopup(c, {autoClose: false, minWidth: 165});
                       }
                     }
                   }).addTo(map);
@@ -2028,7 +2028,6 @@
               if (this._templateVars) {
                 this._templatedLayer = M.templatedLayer(this._templateVars, 
                 { pane: this._container,
-                  imagePath: M.detectImagePath(this._map.getContainer()),
                   _leafletLayer: this,
                   crs: this.crs
                 }).addTo(map);
@@ -2042,7 +2041,6 @@
                   if (this._templateVars) {
                     this._templatedLayer = M.templatedLayer(this._templateVars, 
                     { pane: this._container,
-                      imagePath: M.detectImagePath(this._map.getContainer()),
                       _leafletLayer: this,
                       crs: this.crs
                     }).addTo(map);
@@ -2357,12 +2355,11 @@
           
           summaryContainer.classList.add('mapml-control-summary-container');
           
-          let removeButton = document.createElement('a');
-          removeButton.href = '#';
-          removeButton.role = 'button';
+          let removeButton = document.createElement('button');
+          removeButton.type = 'button';
           removeButton.title = 'Remove Layer';
           removeButton.innerHTML = "<span aria-hidden='true'>&#10006;</span>";
-          removeButton.classList.add('mapml-layer-remove-button');
+          removeButton.classList.add('mapml-layer-remove-button', 'mapml-button');
           L.DomEvent.disableClickPropagation(removeButton);
           L.DomEvent.on(removeButton, 'click', L.DomEvent.stop);
           L.DomEvent.on(removeButton, 'click', (e)=>{
@@ -3042,7 +3039,10 @@
         let popup = e.popup, map = e.target, layer, group,
             content = popup._container.getElementsByClassName("mapml-popup-content")[0];
 
+        popup._container.setAttribute("role", "dialog");
         content.setAttribute("tabindex", "-1");
+        // https://github.com/Maps4HTML/Web-Map-Custom-Element/pull/467#issuecomment-844307818
+        content.setAttribute("role", "document");
         popup._count = 0; // used for feature pagination
 
         if(popup._source._eventParents){ // check if the popup is for a feature or query
@@ -3052,17 +3052,16 @@
           layer = popup._source._templatedLayer;
         }
 
-        if(popup._container.querySelector('div[class="mapml-focus-buttons"]')){
-          L.DomUtil.remove(popup._container.querySelector('div[class="mapml-focus-buttons"]'));
+        if(popup._container.querySelector('nav[class="mapml-focus-buttons"]')){
+          L.DomUtil.remove(popup._container.querySelector('nav[class="mapml-focus-buttons"]'));
           L.DomUtil.remove(popup._container.querySelector('hr'));
         }
         //add when popopen event happens instead
-        let div = L.DomUtil.create("div", "mapml-focus-buttons");
+        let div = L.DomUtil.create("nav", "mapml-focus-buttons");
 
         // creates |< button, focuses map
-        let mapFocusButton = L.DomUtil.create('a',"mapml-popup-button", div);
-        mapFocusButton.href = '#';
-        mapFocusButton.role = "button";
+        let mapFocusButton = L.DomUtil.create("button", "mapml-popup-button", div);
+        mapFocusButton.type = "button";
         mapFocusButton.title = "Focus Map";
         mapFocusButton.innerHTML = "<span aria-hidden='true'>|&#10094;</span>";
         L.DomEvent.disableClickPropagation(mapFocusButton);
@@ -3073,9 +3072,8 @@
         }, popup);
 
         // creates < button, focuses previous feature, if none exists focuses the current feature
-        let previousButton = L.DomUtil.create('a', "mapml-popup-button", div);
-        previousButton.href = '#';
-        previousButton.role = "button";
+        let previousButton = L.DomUtil.create("button", "mapml-popup-button", div);
+        previousButton.type = "button";
         previousButton.title = "Previous Feature";
         previousButton.innerHTML = "<span aria-hidden='true'>&#10094;</span>";
         L.DomEvent.disableClickPropagation(previousButton);
@@ -3088,9 +3086,8 @@
         featureCount.innerText = (popup._count + 1)+"/"+totalFeatures;
 
         // creates > button, focuses next feature, if none exists focuses the current feature
-        let nextButton = L.DomUtil.create('a', "mapml-popup-button", div);
-        nextButton.href = '#';
-        nextButton.role = "button";
+        let nextButton = L.DomUtil.create("button", "mapml-popup-button", div);
+        nextButton.type = "button";
         nextButton.title = "Next Feature";
         nextButton.innerHTML = "<span aria-hidden='true'>&#10095;</span>";
         L.DomEvent.disableClickPropagation(nextButton);
@@ -3098,9 +3095,8 @@
         L.DomEvent.on(nextButton, 'click', layer._nextFeature, popup);
         
         // creates >| button, focuses map controls
-        let controlFocusButton = L.DomUtil.create('a',"mapml-popup-button", div);
-        controlFocusButton.href = '#';
-        controlFocusButton.role = "button";
+        let controlFocusButton = L.DomUtil.create("button", "mapml-popup-button", div);
+        controlFocusButton.type = "button";
         controlFocusButton.title = "Focus Controls";
         controlFocusButton.innerHTML = "<span aria-hidden='true'>&#10095;|</span>";
         L.DomEvent.disableClickPropagation(controlFocusButton);
@@ -3111,7 +3107,6 @@
         }, popup);
     
         let divider = L.DomUtil.create("hr");
-        divider.style.borderTop = "1px solid #bbb";
 
         popup._navigationBar = div;
         popup._content.appendChild(divider);
@@ -3584,7 +3579,7 @@
               // pass the vector layer the container for the parent into which
               // it will append its own container for rendering into
               pane: container,
-              color: 'yellow',
+              //color: 'yellow',
               // instead of unprojecting and then projecting and scaling,
               // a much smarter approach would be to scale at the current
               // zoom
@@ -3949,13 +3944,13 @@
       }
 
       var itemCls = 'mapml-contextmenu-item',
-          el = this._insertElementAt('a', itemCls, container, index),
+          el = this._insertElementAt('button', itemCls, container, index),
           callback = this._createEventHandler(el, options.callback, options.context, options.hideOnSelect),
           html = '';
 
       el.innerHTML = html + options.text;
-      el.href = "#";
-      el.setAttribute("role","button");
+      el.setAttribute("type", "button");
+      el.classList.add("mapml-button");
       if(options.popup){
         el.setAttribute("aria-haspopup", "true");
         el.setAttribute("aria-expanded", "false");
@@ -4339,7 +4334,7 @@
         switch(inputs[i].getAttribute("type")){
           case "zoom":
             nMinZoom = +inputs[i].getAttribute("min");
-            nMaxZoom = +inputs[i].getAttribute("max");
+            nMaxZoom = +(inputs[i].hasAttribute("max") ? inputs[i].getAttribute("max") : nMaxZoom);
             value = +inputs[i].getAttribute("value");
           break;
           case "location":
@@ -4445,19 +4440,20 @@
 
     convertPCRSBounds: function(pcrsBounds, zoom, projection, cs){
       if(!pcrsBounds || (!zoom && zoom !== 0) || !Number.isFinite(+zoom) || !projection || !cs) return undefined;
+      projection = (typeof projection === "string") ? M[projection] : projection;
       switch (cs.toUpperCase()) {
         case "PCRS":
           return pcrsBounds;
         case "TCRS":
         case "TILEMATRIX":
-          let minPixel = this[projection].transformation.transform(pcrsBounds.min, this[projection].scale(+zoom)),
-              maxPixel = this[projection].transformation.transform(pcrsBounds.max, this[projection].scale(+zoom));
+          let minPixel = projection.transformation.transform(pcrsBounds.min, projection.scale(+zoom)),
+              maxPixel = projection.transformation.transform(pcrsBounds.max, projection.scale(+zoom));
           if (cs.toUpperCase() === "TCRS") return L.bounds(minPixel, maxPixel);
-          let tileSize = M[projection].options.crs.tile.bounds.max.x;
+          let tileSize = projection.options.crs.tile.bounds.max.x;
           return L.bounds(L.point(minPixel.x / tileSize, minPixel.y / tileSize), L.point(maxPixel.x / tileSize,maxPixel.y / tileSize)); 
         case "GCRS":
-          let minGCRS = this[projection].unproject(pcrsBounds.min),
-              maxGCRS = this[projection].unproject(pcrsBounds.max);
+          let minGCRS = projection.unproject(pcrsBounds.min),
+              maxGCRS = projection.unproject(pcrsBounds.max);
           return L.bounds(L.point(minGCRS.lng, minGCRS.lat), L.point(maxGCRS.lng, maxGCRS.lat)); 
         default:
           return undefined;
@@ -4466,7 +4462,8 @@
 
     pointToPCRSPoint: function(point, zoom, projection, cs){
       if(!point || (!zoom && zoom !== 0) || !Number.isFinite(+zoom) || !cs || !projection) return undefined;
-      let tileSize = M[projection].options.crs.tile.bounds.max.x;
+      projection = (typeof projection === "string") ? M[projection] : projection;
+      let tileSize = projection.options.crs.tile.bounds.max.x;
       switch(cs.toUpperCase()){
         case "TILEMATRIX":
           return M.pixelToPCRSPoint(L.point(point.x*tileSize,point.y*tileSize),zoom,projection);
@@ -4475,7 +4472,7 @@
         case "TCRS" :
           return M.pixelToPCRSPoint(point,zoom,projection);
         case "GCRS":
-          return this[projection].project(L.latLng(point.y,point.x));
+          return projection.project(L.latLng(point.y,point.x));
         default:
           return undefined;
       }
@@ -4483,11 +4480,13 @@
 
     pixelToPCRSPoint: function(point, zoom, projection){
       if(!point || (!zoom && zoom !== 0) || !Number.isFinite(+zoom) || !projection) return undefined;
-      return this[projection].transformation.untransform(point,this[projection].scale(zoom));
+      projection = (typeof projection === "string") ? M[projection] : projection;
+      return projection.transformation.untransform(point,projection.scale(zoom));
     },
 
     boundsToPCRSBounds: function(bounds, zoom, projection, cs){
       if(!bounds || !bounds.max || !bounds.min || (!zoom && zoom !== 0) || !Number.isFinite(+zoom) || !projection || !cs) return undefined;
+      projection = (typeof projection === "string") ? M[projection] : projection;
       return L.bounds(M.pointToPCRSPoint(bounds.min, zoom, projection, cs), M.pointToPCRSPoint(bounds.max, zoom, projection, cs));
     },
 
@@ -4495,6 +4494,7 @@
     //important to consider when working with pcrs where the origin is not topleft but rather bottomleft, could lead to confusion
     pixelToPCRSBounds : function(bounds, zoom, projection){
       if(!bounds || !bounds.max || !bounds.min || (!zoom && zoom !== 0) || !Number.isFinite(+zoom) || !projection) return undefined;
+      projection = (typeof projection === "string") ? M[projection] : projection;
       return L.bounds(M.pixelToPCRSPoint(bounds.min, zoom, projection), M.pixelToPCRSPoint(bounds.max, zoom, projection));
     },
     //meta content is the content attribute of meta
@@ -4634,11 +4634,11 @@
     onAdd: function (map) {
       let container = L.DomUtil.create("div", "mapml-reload-button leaflet-bar");
 
-      let link = L.DomUtil.create("a", "mapml-reload-button", container);
-      link.innerHTML = "&#x021BA";
-      link.href = "#";
+      let link = L.DomUtil.create("button", "mapml-reload-button", container);
+      link.innerHTML = "<span aria-hidden='true'>&#x021BA</span>";
       link.title = "Reload";
-      link.setAttribute('role', 'button');
+      link.setAttribute("type", "button");
+      link.classList.add("mapml-button");
       link.setAttribute('aria-label', "Reload");
 
       L.DomEvent.disableClickPropagation(link);
@@ -5154,7 +5154,25 @@
    * @returns {*}
    */
   var FeatureRenderer = L.SVG.extend({
+    
 
+    /**
+     * Override method of same name from L.SVG, use the this._container property
+     * to set up the role="none presentation" on featureGroupu container,
+     * per this recommendation: 
+     * https://github.com/Maps4HTML/Web-Map-Custom-Element/pull/471#issuecomment-845192246
+     * @private overrides ancestor method so that we have a _container to work with
+     */
+    _initContainer: function () {
+      // call the method we're overriding, per https://leafletjs.com/examples/extending/extending-1-classes.html#methods-of-the-parent-class
+      // note you have to pass 'this' as the first arg
+      L.SVG.prototype._initContainer.call(this);
+      // knowing that the previous method call creates the this._container, we
+      // access it and set the role="none presetation" which suppresses the 
+      // announcement of "Graphic" on each feature focus.
+      this._container.setAttribute('role', 'none presentation');
+    },
+    
     /**
      * Creates all the appropriate path elements for a M.Feature
      * @param {M.Feature} layer - The M.Feature that needs paths generated
@@ -5442,8 +5460,10 @@
         if(layers.length === 1 && firstLayer.options.link) this.options.link = firstLayer.options.link;
         if(this.options.link){
           M.Feature.prototype.attachLinkHandler.call(this, this.options.group, this.options.link, this.options._leafletLayer);
+          this.options.group.setAttribute('role', 'link');
         } else {
           this.options.group.setAttribute("aria-expanded", "false");
+          this.options.group.setAttribute('role', 'button');
           this.options.onEachFeature(this.options.properties, this);
           this.off("click", this._openPopup);
         }

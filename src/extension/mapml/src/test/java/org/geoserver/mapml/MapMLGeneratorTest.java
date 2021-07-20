@@ -61,6 +61,6 @@ public class MapMLGeneratorTest extends GeoServerTestSupport {
         assertTrue(
                 sw.toString()
                         .contains(
-                                "<multipoint xmlns=\"http://www.w3.org/1999/xhtml/\"><coordinates>-75.705338 45.397785 -75.702082 45.397847</coordinates>"));
+                                "<multipoint xmlns=\"http://www.w3.org/1999/xhtml\"><coordinates>-75.705338 45.397785 -75.702082 45.397847</coordinates>"));
     }
 }

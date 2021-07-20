@@ -62,7 +62,7 @@ public class MapMLGenerator {
 
         StringBuilder sb = new StringBuilder();
         sb.append(
-                "<table xmlns=\"http://www.w3.org/1999/xhtml/\"><thead><tr>"
+                "<table xmlns=\"http://www.w3.org/1999/xhtml\"><thead><tr>"
                         + "<th role=\"columnheader\" scope=\"col\">Property name</th>"
                         + "<th role=\"columnheader\" scope=\"col\">Property value</th>"
                         + "</tr></thead><tbody>");

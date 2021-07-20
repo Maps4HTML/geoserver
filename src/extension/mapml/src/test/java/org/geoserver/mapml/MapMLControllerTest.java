@@ -77,7 +77,7 @@ public class MapMLControllerTest extends WMSTestSupport {
         mc = applicationContext.getBean(MapMLController.class);
         mapmlMarshaller = (Jaxb2Marshaller) applicationContext.getBean("mapmlMarshaller");
         HashMap<String, String> m = new HashMap<>();
-        m.put("html", "http://www.w3.org/1999/xhtml/");
+        m.put("html", "http://www.w3.org/1999/xhtml");
 
         NamespaceContext ctx = new SimpleNamespaceContext(m);
         XMLUnit.setXpathNamespaceContext(ctx);
@@ -301,7 +301,7 @@ public class MapMLControllerTest extends WMSTestSupport {
 
         String result = sw.toString();
         // this tests that the result has had namespaces mapped to minimum possible cruft
-        assertTrue(result.matches("<mapml xmlns=\"http://www.w3.org/1999/xhtml/\">.*"));
+        assertTrue(result.matches("<mapml xmlns=\"http://www.w3.org/1999/xhtml\">.*"));
 
         BodyContent b = mapml.getBody();
         assertNotNull("mapML method must return MapML body in response", b);
