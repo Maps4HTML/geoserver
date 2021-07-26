@@ -9,6 +9,7 @@ import static org.geoserver.mapml.MapMLConstants.DATE_FORMAT;
 import static org.geoserver.mapml.MapMLConstants.MAPML_MIME_TYPE;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -314,7 +315,7 @@ public class MapMLController {
         method = {RequestMethod.GET, RequestMethod.POST},
         produces = {MAPML_MIME_TYPE, "!text/html;charset=UTF-8"}
     )
-    @SuppressWarnings("PMD.CognitiveComplexity") // AA: don't have enough knowledge to split
+    //    @SuppressWarnings("PMD.CognitiveComplexity") // AA: don't have enough knowledge to split
     public Mapml mapML(
             HttpServletRequest request,
             HttpServletResponse response,
@@ -597,7 +598,85 @@ public class MapMLController {
                                         .getGridSubset(projType.value())
                                 != null;
 
-        Boolean useTiles = layerMeta.get("mapml.useTiles", Boolean.class);
+        generateExtent(
+                layerMeta.get("mapml.useTiles", Boolean.class),
+                extentList,
+                tileLayerExists,
+                isLayerGroup,
+                layerGroupInfo,
+                layerInfo,
+                resourceInfo,
+                zoomInput,
+                projType,
+                queryable,
+                workspace,
+                layerName,
+                styleName,
+                imageFormat,
+                baseUrlPattern,
+                timeEnabled,
+                elevationEnabled,
+                isTransparent);
+
+        body.setExtent(extent);
+        mapml.setBody(body);
+        return mapml;
+    }
+
+    /**
+     * @param req
+     * @param shardServerPattern
+     * @return
+     */
+    private static String shardBaseURL(HttpServletRequest req, String shardServerPattern) {
+        StringBuffer sb = new StringBuffer(req.getScheme());
+        sb.append("://")
+                .append(shardServerPattern)
+                .append(":")
+                .append(req.getServerPort())
+                .append(req.getContextPath())
+                .append("/");
+        return sb.toString();
+    }
+    /**
+     * @param useTiles
+     * @param extentList
+     * @param tileLayerExists
+     * @param isLayerGroup
+     * @param layerGroupInfo
+     * @param layerInfo
+     * @param resourceInfo
+     * @param zoomInput
+     * @param projType
+     * @param queryable
+     * @param workspace
+     * @param layerName
+     * @param styleName
+     * @param imageFormat
+     * @param baseUrlPattern
+     * @param timeEnabled
+     * @param elevationEnabled
+     * @param isTransparent
+     */
+    private void generateExtent(
+            Boolean useTiles,
+            List<Object> extentList,
+            boolean tileLayerExists,
+            boolean isLayerGroup,
+            LayerGroupInfo layerGroupInfo,
+            LayerInfo layerInfo,
+            ResourceInfo resourceInfo,
+            Input zoomInput,
+            ProjType projType,
+            boolean queryable,
+            String workspace,
+            String layerName,
+            String styleName,
+            String imageFormat,
+            String baseUrlPattern,
+            boolean timeEnabled,
+            boolean elevationEnabled,
+            boolean isTransparent) {
         if (Boolean.TRUE.equals(useTiles)) {
             if (tileLayerExists) {
                 // emit MapML extent that uses TileMatrix coordinates
@@ -611,7 +690,7 @@ public class MapMLController {
                 zoomInput.setMax(Integer.toString(gss.getZoomStop()));
 
                 // tilematrix inputs
-                input = new Input();
+                Input input = new Input();
                 input.setName("x");
                 input.setType(InputType.LOCATION);
                 input.setUnits(UnitType.TILEMATRIX);
@@ -650,11 +729,18 @@ public class MapMLController {
                 params.put("TileCol", "{x}");
                 params.put("TileRow", "{y}");
                 params.put("format", imageFormat);
-                String urlTemplate =
-                        URLDecoder.decode(
-                                ResponseUtils.buildURL(
-                                        baseUrlPattern, path, params, URLMangler.URLType.SERVICE),
-                                "UTF-8");
+                String urlTemplate = "";
+                try {
+                    urlTemplate =
+                            URLDecoder.decode(
+                                    ResponseUtils.buildURL(
+                                            baseUrlPattern,
+                                            path,
+                                            params,
+                                            URLMangler.URLType.SERVICE),
+                                    "UTF-8");
+                } catch (UnsupportedEncodingException uee) {
+                }
                 tileLink.setTref(urlTemplate);
                 extentList.add(tileLink);
             } else {
@@ -690,7 +776,7 @@ public class MapMLController {
 
                 // tile inputs
                 // txmin
-                input = new Input();
+                Input input = new Input();
                 input.setName("txmin");
                 input.setType(InputType.LOCATION);
                 input.setUnits(UnitType.TILEMATRIX);
@@ -759,11 +845,18 @@ public class MapMLController {
                 params.put("transparent", Boolean.toString(isTransparent));
                 params.put("width", "256");
                 params.put("height", "256");
-                String urlTemplate =
-                        URLDecoder.decode(
-                                ResponseUtils.buildURL(
-                                        baseUrlPattern, path, params, URLMangler.URLType.SERVICE),
-                                "UTF-8");
+                String urlTemplate = "";
+                try {
+                    urlTemplate =
+                            URLDecoder.decode(
+                                    ResponseUtils.buildURL(
+                                            baseUrlPattern,
+                                            path,
+                                            params,
+                                            URLMangler.URLType.SERVICE),
+                                    "UTF-8");
+                } catch (UnsupportedEncodingException uee) {
+                }
                 tileLink.setTref(urlTemplate);
                 extentList.add(tileLink);
             }
@@ -803,7 +896,7 @@ public class MapMLController {
             }
             // image inputs
             // xmin
-            input = new Input();
+            Input input = new Input();
             input.setName("xmin");
             input.setType(InputType.LOCATION);
             input.setUnits(projType == projType.WGS_84 ? UnitType.GCRS : UnitType.PCRS);
@@ -888,11 +981,15 @@ public class MapMLController {
             params.put("transparent", Boolean.toString(isTransparent));
             params.put("width", "{w}");
             params.put("height", "{h}");
-            String urlTemplate =
-                    URLDecoder.decode(
-                            ResponseUtils.buildURL(
-                                    baseUrlPattern, path, params, URLMangler.URLType.SERVICE),
-                            "UTF-8");
+            String urlTemplate = "";
+            try {
+                urlTemplate =
+                        URLDecoder.decode(
+                                ResponseUtils.buildURL(
+                                        baseUrlPattern, path, params, URLMangler.URLType.SERVICE),
+                                "UTF-8");
+            } catch (UnsupportedEncodingException uee) {
+            }
             imageLink.setTref(urlTemplate);
             extentList.add(imageLink);
         }
@@ -901,7 +998,7 @@ public class MapMLController {
         if (queryable) {
             if (Boolean.TRUE.equals(useTiles) && tileLayerExists) {
                 // query i value (x)
-                input = new Input();
+                Input input = new Input();
                 input.setName("i");
                 input.setType(InputType.LOCATION);
                 input.setUnits(UnitType.TILE);
@@ -935,11 +1032,18 @@ public class MapMLController {
                 params.put("infoformat", "text/mapml");
                 params.put("i", "{i}");
                 params.put("j", "{j}");
-                String urlTemplate =
-                        URLDecoder.decode(
-                                ResponseUtils.buildURL(
-                                        baseUrlPattern, path, params, URLMangler.URLType.SERVICE),
-                                "UTF-8");
+                String urlTemplate = "";
+                try {
+                    urlTemplate =
+                            URLDecoder.decode(
+                                    ResponseUtils.buildURL(
+                                            baseUrlPattern,
+                                            path,
+                                            params,
+                                            URLMangler.URLType.SERVICE),
+                                    "UTF-8");
+                } catch (UnsupportedEncodingException uee) {
+                }
                 queryLink.setTref(urlTemplate);
                 extentList.add(queryLink);
             } else {
@@ -949,7 +1053,7 @@ public class MapMLController {
                     units = UnitType.TILE;
                 }
                 // query i value (x)
-                input = new Input();
+                Input input = new Input();
                 input.setName("i");
                 input.setType(InputType.LOCATION);
                 input.setUnits(units);
@@ -996,34 +1100,21 @@ public class MapMLController {
                 params.put("transparent", Boolean.toString(isTransparent));
                 params.put("x", "{i}");
                 params.put("y", "{j}");
-                String urlTemplate =
-                        URLDecoder.decode(
-                                ResponseUtils.buildURL(
-                                        baseUrlPattern, path, params, URLMangler.URLType.SERVICE),
-                                "UTF-8");
+                String urlTemplate = "";
+                try {
+                    urlTemplate =
+                            URLDecoder.decode(
+                                    ResponseUtils.buildURL(
+                                            baseUrlPattern,
+                                            path,
+                                            params,
+                                            URLMangler.URLType.SERVICE),
+                                    "UTF-8");
+                } catch (UnsupportedEncodingException uee) {
+                }
                 queryLink.setTref(urlTemplate);
                 extentList.add(queryLink);
             }
         }
-
-        body.setExtent(extent);
-        mapml.setBody(body);
-        return mapml;
-    }
-
-    /**
-     * @param req
-     * @param shardServerPattern
-     * @return
-     */
-    private static String shardBaseURL(HttpServletRequest req, String shardServerPattern) {
-        StringBuffer sb = new StringBuffer(req.getScheme());
-        sb.append("://")
-                .append(shardServerPattern)
-                .append(":")
-                .append(req.getServerPort())
-                .append(req.getContextPath())
-                .append("/");
-        return sb.toString();
     }
 }
