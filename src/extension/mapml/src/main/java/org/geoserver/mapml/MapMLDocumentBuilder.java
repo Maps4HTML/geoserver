@@ -27,6 +27,7 @@ import org.geoserver.catalog.FeatureTypeInfo;
 import org.geoserver.catalog.LayerGroupInfo;
 import org.geoserver.catalog.LayerInfo;
 import org.geoserver.catalog.MetadataMap;
+import org.geoserver.catalog.PublishedInfo;
 import org.geoserver.catalog.ResourceInfo;
 import org.geoserver.catalog.StyleInfo;
 import org.geoserver.config.GeoServer;
@@ -152,6 +153,17 @@ public class MapMLDocumentBuilder {
         prepareDocument();
         return this.mapml;
     }
+
+    private String getLabel(PublishedInfo p, String def) {
+        if (p.getInternationalTitle() != null) {
+            // use international title per request or default locale
+            return p.getInternationalTitle().toString(request.getLocale());
+        } else if (p.getTitle() != null && !p.getTitle().isBlank()) {
+            return p.getTitle();
+        } else {
+            return p.getName().isBlank() ? def : p.getName();
+        }
+    }
     /** Init all the private fields used while generating MapML document */
     private void initialize() {
         layerInfo = geoServer.getCatalog().getLayerByName(this.layer);
@@ -178,10 +190,7 @@ public class MapMLDocumentBuilder {
                             : "");
             queryable = !layerGroupInfo.isQueryDisabled();
             layerName = layerGroupInfo.getName();
-            layerLabel =
-                    layerGroupInfo.getInternationalTitle() != null
-                            ? layerGroupInfo.getInternationalTitle().toString(request.getLocale())
-                            : layerGroupInfo.getTitle();
+            layerLabel = getLabel(layerGroupInfo, layerName);
         } else {
             resourceInfo = layerInfo.getResource();
             bbox = layerInfo.getResource().getLatLonBoundingBox();
@@ -193,10 +202,7 @@ public class MapMLDocumentBuilder {
             queryable = layerInfo.isQueryable();
             isTransparent = transparent.orElse(!layerInfo.isOpaque());
             layerName = layerInfo.getName().isEmpty() ? layer : layerInfo.getName();
-            layerLabel =
-                    resourceInfo.getInternationalTitle() != null
-                            ? resourceInfo.getInternationalTitle().toString(request.getLocale())
-                            : layerName;
+            layerLabel = getLabel(layerInfo, layerName);
         }
         try {
             projType = ProjType.fromValue(proj.toUpperCase());

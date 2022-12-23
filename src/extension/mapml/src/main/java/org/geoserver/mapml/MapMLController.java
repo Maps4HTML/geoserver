@@ -16,6 +16,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.geoserver.catalog.LayerGroupInfo;
 import org.geoserver.catalog.LayerInfo;
+import org.geoserver.catalog.PublishedInfo;
 import org.geoserver.catalog.ResourceInfo;
 import org.geoserver.config.GeoServer;
 import org.geoserver.mapml.tcrs.Bounds;
@@ -126,7 +127,6 @@ public class MapMLController {
         ResourceInfo resourceInfo = null;
         LayerGroupInfo layerGroupInfo = null;
         boolean isLayerGroup = (layerInfo == null);
-        String layerName = "";
         String layerLabel = "Layer";
         String styleName =
                 geoServer.getCatalog().getStyleByName(style.orElse("")) != null ? style.get() : "";
@@ -139,23 +139,11 @@ public class MapMLController {
             for (LayerInfo li : layerGroupInfo.layers()) {
                 bbox.expandToInclude(li.getResource().getLatLonBoundingBox());
             }
-            // if the layerGroupInfo.getName() is empty, the layer group isn't
-            // available to a getMap request, so we should probably throw in
-            // that case, or perhaps let the mapML method deal with iterating
-            // the child layers.
-            layerName = layerGroupInfo.getName().isEmpty() ? layer : layerGroupInfo.getName();
-            layerLabel =
-                    layerGroupInfo.getInternationalTitle() != null
-                            ? layerGroupInfo.getInternationalTitle().toString(request.getLocale())
-                            : layerName;
+            layerLabel = getLabel(layerGroupInfo, layer, request);
         } else {
             resourceInfo = layerInfo.getResource();
-            bbox = layerInfo.getResource().getLatLonBoundingBox();
-            layerName = layerInfo.getName().isEmpty() ? layer : layerInfo.getName();
-            layerLabel =
-                    resourceInfo.getInternationalTitle() != null
-                            ? resourceInfo.getInternationalTitle().toString(request.getLocale())
-                            : layerName;
+            bbox = resourceInfo.getLatLonBoundingBox();
+            layerLabel = getLabel(layerInfo, layer, request);
         }
         ProjType projType;
         try {
@@ -287,5 +275,16 @@ public class MapMLController {
                 new MapMLDocumentBuilder(
                         this, request, response, layer, proj, style, transparent, format);
         return mb.getMapMLDocument();
+    }
+
+    private String getLabel(PublishedInfo p, String def, HttpServletRequest request) {
+        if (p.getInternationalTitle() != null) {
+            // use international title per request or default locale
+            return p.getInternationalTitle().toString(request.getLocale());
+        } else if (p.getTitle() != null && !p.getTitle().isBlank()) {
+            return p.getTitle();
+        } else {
+            return p.getName().isBlank() ? def : p.getName();
+        }
     }
 }
