@@ -98,6 +98,7 @@ public class MapMLDocumentBuilder {
     private boolean queryable = false;
     private String workspace = "";
     private String layerName = "";
+    private String layerLabel = "Layer";
     private String styleName;
     private String imageFormat;
     private String baseUrl;
@@ -177,6 +178,10 @@ public class MapMLDocumentBuilder {
                             : "");
             queryable = !layerGroupInfo.isQueryDisabled();
             layerName = layerGroupInfo.getName();
+            layerLabel =
+                    layerGroupInfo.getInternationalTitle() != null
+                            ? layerGroupInfo.getInternationalTitle().toString(request.getLocale())
+                            : layerGroupInfo.getTitle();
         } else {
             resourceInfo = layerInfo.getResource();
             bbox = layerInfo.getResource().getLatLonBoundingBox();
@@ -187,7 +192,11 @@ public class MapMLDocumentBuilder {
                             : "");
             queryable = layerInfo.isQueryable();
             isTransparent = transparent.orElse(!layerInfo.isOpaque());
-            layerName = layerInfo.getName();
+            layerName = layerInfo.getName().isEmpty() ? layer : layerInfo.getName();
+            layerLabel =
+                    resourceInfo.getInternationalTitle() != null
+                            ? resourceInfo.getInternationalTitle().toString(request.getLocale())
+                            : layerName;
         }
         try {
             projType = ProjType.fromValue(proj.toUpperCase());
@@ -244,7 +253,7 @@ public class MapMLDocumentBuilder {
     private HeadContent prepareHead() {
         // build the head
         HeadContent head = new HeadContent();
-        head.setTitle(layerName);
+        head.setTitle(layerLabel);
         Base base = new Base();
         base.setHref(ResponseUtils.buildURL(baseUrl, "mapml/", null, URLMangler.URLType.EXTERNAL));
         head.setBase(base);

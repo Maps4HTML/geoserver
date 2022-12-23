@@ -127,6 +127,7 @@ public class MapMLController {
         LayerGroupInfo layerGroupInfo = null;
         boolean isLayerGroup = (layerInfo == null);
         String layerName = "";
+        String layerLabel = "Layer";
         String styleName =
                 geoServer.getCatalog().getStyleByName(style.orElse("")) != null ? style.get() : "";
         if (isLayerGroup) {
@@ -142,17 +143,19 @@ public class MapMLController {
             // available to a getMap request, so we should probably throw in
             // that case, or perhaps let the mapML method deal with iterating
             // the child layers.
-            layerName =
-                    layerGroupInfo.getTitle() == null || layerGroupInfo.getTitle().isEmpty()
-                            ? layerGroupInfo.getName().isEmpty() ? layer : layerGroupInfo.getName()
-                            : layerGroupInfo.getTitle();
+            layerName = layerGroupInfo.getName().isEmpty() ? layer : layerGroupInfo.getName();
+            layerLabel =
+                    layerGroupInfo.getInternationalTitle() != null
+                            ? layerGroupInfo.getInternationalTitle().toString(request.getLocale())
+                            : layerName;
         } else {
             resourceInfo = layerInfo.getResource();
             bbox = layerInfo.getResource().getLatLonBoundingBox();
-            layerName =
-                    resourceInfo.getTitle().isEmpty()
-                            ? layerInfo.getName().isEmpty() ? layer : layerInfo.getName()
-                            : resourceInfo.getTitle();
+            layerName = layerInfo.getName().isEmpty() ? layer : layerInfo.getName();
+            layerLabel =
+                    resourceInfo.getInternationalTitle() != null
+                            ? resourceInfo.getInternationalTitle().toString(request.getLocale())
+                            : layerName;
         }
         ProjType projType;
         try {
@@ -195,7 +198,7 @@ public class MapMLController {
                         "/mapml/viewer/widget/mapml-viewer.js",
                         null,
                         URLMangler.URLType.RESOURCE);
-        String title = "GeoServer MapML preview " + layerName;
+        String title = layerLabel;
         StringBuilder sb = new StringBuilder();
         sb.append("<!DOCTYPE html>\n")
                 .append("<html>\n")
@@ -233,7 +236,7 @@ public class MapMLController {
                 .append(longitude)
                 .append("\" controls>\n")
                 .append("<layer- label=\"")
-                .append(layerName)
+                .append(layerLabel)
                 .append("\" ")
                 .append("src=\"")
                 .append(request.getContextPath())

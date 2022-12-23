@@ -254,12 +254,29 @@ public class MapMLControllerTest extends WMSTestSupport {
         MockHttpServletRequest request =
                 createRequest("mapml/" + ((PublishedInfo) l).getName() + "/osmtile/");
         MockHttpServletResponse response = new MockHttpServletResponse();
+        String layerName = "";
+        String layerLabel = "";
+        LayerInfo lyrInfo = getCatalog().getLayerByName(((PublishedInfo) l).getName());
+        LayerGroupInfo lyrGpInfo = getCatalog().getLayerGroupByName(((PublishedInfo) l).getName());
+        if (lyrInfo != null) { // layer...
+            layerName = lyrInfo.getName();
+            layerLabel =
+                    lyrInfo.getInternationalTitle() != null
+                            ? lyrInfo.getInternationalTitle().toString(request.getLocale())
+                            : layerName;
+        } else { // layer group...
+            layerName = lyrGpInfo.getName();
+            layerLabel =
+                    lyrGpInfo.getInternationalTitle() != null
+                            ? lyrGpInfo.getInternationalTitle().toString(request.getLocale())
+                            : layerName;
+        }
 
         String htmlResponse =
                 mc.Html(
                         request,
                         response,
-                        ((PublishedInfo) l).getName(),
+                        layerName,
                         "osmtile",
                         Optional.empty(),
                         Optional.empty(),
@@ -273,8 +290,8 @@ public class MapMLControllerTest extends WMSTestSupport {
         Element map = doc.body().select("mapml-viewer").first();
         Element layer = map.getElementsByTag("layer-").first();
         assertTrue(
-                "Layer must have label equal to string ",
-                layer.attr("label").equalsIgnoreCase(((PublishedInfo) l).getName()));
+                "Layer must have label equal to title or layer name if no title",
+                layer.attr("label").equalsIgnoreCase(layerLabel));
         assertTrue(!"0".equalsIgnoreCase(doc.select("mapml-viewer").attr("zoom")));
     }
 
