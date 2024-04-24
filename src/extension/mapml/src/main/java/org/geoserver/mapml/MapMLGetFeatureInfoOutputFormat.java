@@ -83,8 +83,10 @@ public class MapMLGetFeatureInfoOutputFormat extends GetFeatureInfoOutputFormat 
         String projection =
                 TiledCRSConstants.lookupTCRSName(
                         kvp.getOrDefault(
-                                "CRS",
-                                kvp.getOrDefault("SRS", kvp.getOrDefault("TILEMATRIXSET", ""))));
+                                        "CRS",
+                                        kvp.getOrDefault(
+                                                "SRS", kvp.getOrDefault("TILEMATRIXSET", "")))
+                                .replaceAll("MapML:", ""));
 
         // build the mapML doc
         Mapml mapml = new Mapml();
