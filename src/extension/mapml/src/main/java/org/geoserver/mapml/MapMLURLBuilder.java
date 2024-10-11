@@ -140,21 +140,6 @@ public class MapMLURLBuilder {
             // Not supporting cross-requests yet:
             // GetTiles against remote WMS
             // GetMap against remote WMTS
-            String service = params.get(SERVICE);
-            String request = params.get(REQUEST);
-            if (storeInfo instanceof WMTSStoreInfo) {
-                if (GETMAP.equalsIgnoreCase(request)
-                        || (GETFEATUREINFO.equalsIgnoreCase(request)
-                                && WMS.equalsIgnoreCase(service))) {
-                    return false;
-                }
-            } else if (storeInfo instanceof WMSStoreInfo) {
-                if (GETTILE.equalsIgnoreCase(request)
-                        || (GETFEATUREINFO.equalsIgnoreCase(request)
-                                && WMTS.equalsIgnoreCase(service))) {
-                    return false;
-                }
-            }
             return TiledCRSConstants.getSupportedOutputCRS(proj) != null;
         }
         return false;
@@ -184,6 +169,7 @@ public class MapMLURLBuilder {
             boolean isSupportedOutputCRS = outputCRS != null;
             if (resourceInfo != null) {
                 String capabilitiesURL = null;
+                URL getResourceURL = null;
                 String tileMatrixSet = null;
                 StoreInfo storeInfo = resourceInfo.getStore();
                 String requestedCRS = isSupportedOutputCRS ? outputCRS : proj;
@@ -195,6 +181,7 @@ public class MapMLURLBuilder {
                     try {
                         WMSCapabilities capabilities =
                                 wmsStoreInfo.getWebMapServer(null).getCapabilities();
+                        getResourceURL = capabilities.getRequest().getGetMap().getGet();
                         version = capabilities.getVersion();
                         List<Layer> layerList = capabilities.getLayerList();
                         // Check on GetFeatureInfo
@@ -241,6 +228,7 @@ public class MapMLURLBuilder {
                     try {
                         WMTSCapabilities capabilities =
                                 wmtsStoreInfo.getWebMapTileServer(null).getCapabilities();
+                        getResourceURL = capabilities.getRequest().getGetTile().getGet();
                         version = capabilities.getVersion();
                         List<WMTSLayer> layerList = capabilities.getLayerList();
                         // Check on GetFeatureInfo
@@ -284,9 +272,24 @@ public class MapMLURLBuilder {
                 if (cascadeToRemote) {
                     // if we reach this point, we can finally cascade.
                     // Let's update all the params for the cascading
-                    String[] baseUrlAndPath = getBaseUrlAndPath(capabilitiesURL);
-                    baseUrl = baseUrlAndPath[0];
-                    path = baseUrlAndPath[1];
+                    // getResourceURL may be null if the capabilities doc is misconfigured;
+                    if (getResourceURL != null) {
+                        baseUrl =
+                                getResourceURL.getProtocol()
+                                        + "://"
+                                        + getResourceURL.getHost()
+                                        + (getResourceURL.getPort() == -1
+                                                ? ""
+                                                : ":" + getResourceURL.getPort())
+                                        + "/";
+
+                        path = getResourceURL.getPath();
+                    } else {
+                        // if misconfigured capabilites, use cap document URL as base
+                        String[] baseUrlAndPath = getBaseUrlAndPath(capabilitiesURL);
+                        baseUrl = baseUrlAndPath[0];
+                        path = baseUrlAndPath[1];
+                    }
                     urlType = URLMangler.URLType.EXTERNAL;
                     updateRequestParams(
                             params, layerName, version, requestedCRS, tileMatrixSet, infoFormats);
