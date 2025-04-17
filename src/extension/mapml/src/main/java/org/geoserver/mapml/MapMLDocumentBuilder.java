@@ -101,9 +101,11 @@ import org.geoserver.wms.featureinfo.FeatureTemplate;
 import org.geotools.api.feature.simple.SimpleFeatureType;
 import org.geotools.api.referencing.FactoryException;
 import org.geotools.api.referencing.crs.CoordinateReferenceSystem;
+import org.geotools.api.referencing.operation.MathTransform;
 import org.geotools.api.referencing.operation.TransformException;
 import org.geotools.api.style.Style;
 import org.geotools.coverage.grid.io.GridCoverage2DReader;
+import org.geotools.geometry.Position2D;
 import org.geotools.geometry.jts.ReferencedEnvelope;
 import org.geotools.referencing.CRS;
 import org.geotools.referencing.crs.DefaultGeographicCRS;
@@ -1789,7 +1791,6 @@ public class MapMLDocumentBuilder {
         boolean useTiles = false;
         boolean useFeatures = false;
         ReferencedEnvelope projectedBbox = this.projectedBox;
-        ReferencedEnvelope geographicBox = new ReferencedEnvelope(DefaultGeographicCRS.WGS84);
         List<String> headerContent = getPreviewTemplates(MAPML_PREVIEW_HEAD_FTL, getFeatureTypes());
         for (MapMLLayerMetadata mapMLLayerMetadata : mapMLLayerMetadataList) {
             layer += mapMLLayerMetadata.getLayerName() + ",";
@@ -1811,9 +1812,19 @@ public class MapMLDocumentBuilder {
                 }
             }
             try {
-                geographicBox = projectedBbox.transform(DefaultGeographicCRS.WGS84, true);
-                longitude = geographicBox.centre().getX();
-                latitude = geographicBox.centre().getY();
+                // getting the center after transforming the envelope results in
+                // odd starting lat/lon for non-orthogonal projections e.g. LCC
+                // IN SOME CASES, particularly remote/cascaded layers apparently
+                Position2D destPos = new Position2D();
+                MathTransform transform = CRS.findMathTransform(
+                        projectedBbox.getCoordinateReferenceSystem(), DefaultGeographicCRS.WGS84, true);
+                Position2D projectedCenter = new Position2D(
+                        projectedBbox.getCoordinateReferenceSystem(),
+                        projectedBbox.getCenterX(),
+                        projectedBbox.getCenterY());
+                transform.transform(projectedCenter, destPos);
+                longitude = destPos.getX();
+                latitude = destPos.getY();
             } catch (TransformException | FactoryException e) {
                 throw new ServiceException("Unable to transform bbox to WGS84", e);
             }
