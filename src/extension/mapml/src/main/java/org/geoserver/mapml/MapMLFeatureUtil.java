@@ -85,6 +85,7 @@ import org.locationtech.jts.geom.Envelope;
 
 public class MapMLFeatureUtil {
     private static final Logger LOGGER = Logging.getLogger(MapMLFeatureUtil.class);
+    private static final double IS_TILE_TOL = 0.002D;
     public static final String STYLE_CLASS_PREFIX = ".";
     public static final String STYLE_CLASS_DELIMITER = " ";
     public static final String BBOX_DISPLAY_NONE = ".bbox {display:none}";
@@ -324,7 +325,13 @@ public class MapMLFeatureUtil {
                             }
                         }
                         Collections.sort(tiles);
-                        featuresOrTiles.addAll(tiles);
+                        boolean isTile = (getMapRequest.getWidth() == getMapRequest.getHeight()
+                                && tiles.get(0).getDistance() < IS_TILE_TOL);
+                        if (isTile) {
+                            featuresOrTiles.add(tiles.get(0));
+                        } else {
+                            featuresOrTiles.addAll(tiles);
+                        }
                     }
                 } catch (FactoryException | GeoWebCacheException | TransformException e) {
                     throw new ServiceException("Error while looking up MapML gridset", e);

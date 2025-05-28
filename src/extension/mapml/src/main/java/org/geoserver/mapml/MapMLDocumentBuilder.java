@@ -1643,10 +1643,7 @@ public class MapMLDocumentBuilder {
         params.put("tilematrix", "{z}");
         params.put("TileCol", "{x}");
         params.put("TileRow", "{y}");
-        // if it's a raster layer, use the image format even if features are requested
-        boolean isRasterLayer = mapMLLayerMetadata.getLayerInfo() != null
-                && mapMLLayerMetadata.getLayerInfo().getResource() instanceof CoverageInfo;
-        if (mapMLLayerMetadata.isUseFeatures() && !isRasterLayer) {
+        if (mapMLLayerMetadata.isUseFeatures()) {
             params.put("format", MAPML_MIME_TYPE);
             params.put(
                     "format_options",

@@ -403,12 +403,12 @@ public class MapMLFormatOptionsMatrixTest extends MapMLTestSupport {
             // For cached raster: should have GetTile URL
             assertXpathExists("//html:map-link[@rel='tile']", doc);
 
-            // Verify that the tile link contains "GetTile"
-            String tileUrl = xpath.evaluate("//html:map-link[@rel='tile']/@tref", doc);
+            // Verify that the tile link contains "GetTile" and has type=text/mapml
+            String tileUrl = xpath.evaluate("//html:map-link[@rel='tile'][@type='text/mapml']/@tref", doc);
             assertTrue("Tile URL should contain GetTile", tileUrl.contains("GetTile"));
 
-            // Verify that the tile link uses image format for rasters
-            assertTrue("Tile URL should use image format for rasters", tileUrl.contains("image/png"));
+            // Verify that the tile link uses text/mapml for rasters with mapmlusefeatures:true
+            assertTrue("Tile URL should use text/mapml for vector tiles", tileUrl.contains("text/mapml"));
 
         } finally {
             disableTileCaching(new QName(MockData.CITE_URI, "World"), getCatalog());
