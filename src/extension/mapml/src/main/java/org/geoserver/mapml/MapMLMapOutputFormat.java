@@ -73,7 +73,7 @@ public class MapMLMapOutputFormat implements GetMapOutputFormat {
             mapMLDocument = mapMLDocumentBuilder.getMapMLDocument();
         }
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
-        encoder.encode(mapMLDocument, bos);
+        encoder.encode(mapMLDocument, bos, true);
         return new RawMap(mapContent, bos, MapMLConstants.MAPML_MIME_TYPE);
     }
 
